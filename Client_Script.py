@@ -1,4 +1,4 @@
-# This Code id for Client 
+# This Code is for WebSocket Client 
 
 import asyncio
 import websockets
