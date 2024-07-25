@@ -1,0 +1,45 @@
+# Author :  Dachraoui Nada 
+# This Code is to set your computer as a server using WebSocket Communication Protocol and sens csv File to your Client
+
+import asyncio  
+import websockets 
+import pandas as pd  
+
+db_path = 'received_data.csv' #   Modify this part of code and set your own data file path 
+
+async def fetch_last_column(csv_file_path):
+    df = pd.read_csv(csv_file_path) 
+    last_column = df.iloc[:, -1]  
+    return last_column  
+async def receive_csv(websocket):
+    with open(db_path, 'wb') as file: 
+        async for message in websocket: 
+            if message == "END_OF_FILE": 
+                break 
+            file.write(message) 
+            print("CSV file received and saved as 'received_data.csv'.") 
+
+
+async def handler(websocket, path):
+    client_ip = websocket.remote_address[0]
+    print(f"Client connected with IP: {client_ip}")  
+    await websocket.send(f"Your IP address is {client_ip}") 
+    async for message in websocket:
+        if message == "SEND_CSV": 
+            await receive_csv(websocket) 
+        elif message == "GET_LAST_COLUMN":  
+            last_column = await fetch_last_column(db_path) 
+            print("Last column of the CSV file:") 
+            print(last_column)  # Prints the last column
+            await websocket.send(f"Last column of the CSV file:\n{last_column.to_string(index=False)}")
+
+
+async def main():
+    server = await websockets.serve(handler, '0.0.0.0', 8765)  
+    print("WebSocket server running on ws://0.0.0.0:8765")  
+    await server.wait_closed()  
+
+
+
+if __name__ == "__main__":
+    asyncio.run(main())  # Runs the main function
